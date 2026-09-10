@@ -12,8 +12,8 @@ public class ChatServer {
     private static final int MAX_USERS_ALLOWED = 3;
 
     public static void main(String[] args) {
-        try (ServerSocket serverSocket = new ServerSocket(PORT);
-             ExecutorService executorService = Executors.newFixedThreadPool(MAX_USERS_ALLOWED)) {
+        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+            ExecutorService executorService = Executors.newFixedThreadPool(MAX_USERS_ALLOWED);
 
             System.out.println("Chat server started on port " + PORT + "...");
 
