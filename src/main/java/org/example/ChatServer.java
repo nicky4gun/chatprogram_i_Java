@@ -12,6 +12,8 @@ public class ChatServer {
     private static final int MAX_USERS_ALLOWED = 3;
 
     public static void main(String[] args) {
+        ChatRoomManager chatRoomManager = new ChatRoomManager();
+
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             ExecutorService executorService = Executors.newFixedThreadPool(MAX_USERS_ALLOWED);
 
@@ -22,7 +24,7 @@ public class ChatServer {
                 System.out.println("New client connected: " + clientSocket.getRemoteSocketAddress());
 
                 try {
-                    ChatClientHandler clientHandler = new ChatClientHandler(clientSocket);
+                    ChatClientHandler clientHandler = new ChatClientHandler(clientSocket, chatRoomManager);
                     executorService.execute(clientHandler);
                 } catch (IOException e) {
                     System.out.println("Failed to initialize handlers: " + e.getMessage());
