@@ -6,31 +6,58 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.time.Instant;
 
 public class ChatClientHandler implements Runnable {
     private final Socket clientSocket;
     private final PrintWriter out;
+    private final MessageParser messageParser;
+    private String username;
 
     public ChatClientHandler(Socket clientSocket) throws IOException {
         this.clientSocket = clientSocket;
         this.out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
+        this.messageParser = new MessageParser();
     }
 
     @Override
     public void run() {
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
-            String line;
-            while ((line = in.readLine()) != null) {
-                System.out.println("Received from client: " + line);
-                // Echo back to client so client-side ServerListener can see it
-                out.println("Server echo: " + line);
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
+
+            String rawClientMessage;
+            while ((rawClientMessage = in.readLine()) != null) {
+                Message clientMessage = messageParser.parseClientMessage(rawClientMessage);
+                Message serverMessage;
+
+                if ("LOGIN".equalsIgnoreCase(clientMessage.getType())) {
+                    this.username = clientMessage.getPayload();
+                    serverMessage = new Message(
+                            Instant.now(),
+                            "OK",
+                            "Server",
+                            this.username,
+                            "Login godkendt"
+                    );
+                } else {
+                    serverMessage = new Message(
+                            Instant.now(),
+                            clientMessage.getType(),
+                            username != null ? username : "Server",
+                            clientMessage.getTarget(),
+                            clientMessage.getPayload()
+                    );
+                }
+
+                out.println(messageParser.formatServerMessage(serverMessage));
             }
         } catch (IOException e) {
             System.out.println("Client handler error: " + e.getMessage());
         } finally {
             try {
                 clientSocket.close();
-            } catch (IOException ignored) {
+            } catch (IOException e) {
+                System.out.println("Client socket close error: " + e.getMessage());
             }
         }
     }
