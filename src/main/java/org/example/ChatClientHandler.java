@@ -39,7 +39,7 @@ public class ChatClientHandler implements Runnable {
         } catch (IOException e) {
             System.out.println("Client handler error: " + e.getMessage());
         } finally {
-            disconnect();
+            ClientRegistry.unregister(this);
             try {
                 clientSocket.close();
             } catch (IOException e) {
@@ -189,5 +189,27 @@ public class ChatClientHandler implements Runnable {
 
     private void sendMessageToClient(Message message) {
         out.println(messageParser.formatServerMessage(message));
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void close() {
+        try {
+            clientSocket.close();
+        } catch (IOException e) {
+            System.out.println("Client socket close error: " + e.getMessage());
+        }
+    }
+
+    private Message createErrorMessage(String target, String message) {
+        return new Message(
+                Instant.now(),
+                "ERROR",
+                "Server",
+                target,
+                message
+        );
     }
 }
