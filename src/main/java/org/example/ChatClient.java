@@ -23,6 +23,25 @@ public class ChatClient {
             ServerListener serverListener = new ServerListener(socket);
             serverListener.start();
 
+            System.out.print("Indtast brugernavn: ");
+            String username = keyboard.readLine();
+            if (username == null || username.trim().isEmpty()) {
+                System.out.println("Brugernavn må ikke være tomt.");
+                return;
+            }
+
+            Message loginMessage = new Message(null, "LOGIN", null, "Server", username.trim());
+            out.println(parser.formatClientMessage(loginMessage));
+
+            String loginReply = in.readLine();
+            Message loginResponse = parser.parseServerMessage(loginReply);
+            System.out.println("Client received: " + loginResponse);
+
+            if ("ERROR".equalsIgnoreCase(loginResponse.getType())) {
+                System.out.println("Login fejlede. Prøv et andet brugernavn.");
+                return;
+            }
+
             System.out.print("Indtast TYPE: ");
             String type = keyboard.readLine();
             System.out.print("Indtast TARGET: ");
