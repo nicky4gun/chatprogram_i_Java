@@ -12,6 +12,29 @@ public class ChatClient {
 
 
     public static void main(String[] args) {
+        try (Socket socket = new Socket(DEFAULT_HOST, DEFAULT_PORT);
+             PrintWriter out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
+             Scanner scanner = new Scanner(System.in)) {
+            ServerListener serverListener = new ServerListener(socket);
+            serverListener.start();
+
+            System.out.println("Connected to server. Type messages and press Enter. Type 'quit' to exit.");
+            while (true) {
+                String message = scanner.nextLine();
+                if (message == null) break;
+                if ("quit".equalsIgnoreCase(message.trim())) {
+                    System.out.println("Shutting down client...");
+                    break;
+                }
+                out.println(message);
+                System.out.println("Client sent: " + message);
+            }
+
+            // graceful shutdown
+            try {
+                socket.close();
+            } catch (Exception ignored) {
+            }
         MessageParser parser = new MessageParser();
         
         try (BufferedReader keyboard = new BufferedReader(new InputStreamReader(System.in));

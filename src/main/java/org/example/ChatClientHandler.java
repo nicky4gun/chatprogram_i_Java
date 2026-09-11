@@ -3,17 +3,20 @@ package org.example;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.time.Instant;
 
 public class ChatClientHandler implements Runnable {
     private final Socket clientSocket;
+    private final PrintWriter out;
     private final MessageParser messageParser;
     private String username;
 
-    public ChatClientHandler(Socket clientSocket) {
+    public ChatClientHandler(Socket clientSocket) throws IOException {
         this.clientSocket = clientSocket;
+        this.out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
         this.messageParser = new MessageParser();
     }
 
@@ -57,5 +60,16 @@ public class ChatClientHandler implements Runnable {
                 System.out.println("Client socket close error: " + e.getMessage());
             }
         }
+    }
+
+    // kept for compatibility (not used server-side now)
+    public void handleIncomingText(String text) {
+        out.println(text);
+        System.out.println("Forwarded to client handler: " + text);
+    }
+
+    public void sendErrorToServer(String errorMessage) {
+        out.println(errorMessage);
+        System.out.println("Sent error to server: " + errorMessage);
     }
 }

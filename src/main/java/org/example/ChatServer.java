@@ -21,8 +21,12 @@ public class ChatServer {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("New client connected: " + clientSocket.getRemoteSocketAddress());
 
-                ChatClientHandler clientHandler = new ChatClientHandler(clientSocket);
-                executorService.execute(clientHandler);
+                try {
+                    ChatClientHandler clientHandler = new ChatClientHandler(clientSocket);
+                    executorService.execute(clientHandler);
+                } catch (IOException e) {
+                    System.out.println("Failed to initialize handlers: " + e.getMessage());
+                }
             }
         } catch (IOException e) {
             System.out.println("Server error: " + e.getMessage());
