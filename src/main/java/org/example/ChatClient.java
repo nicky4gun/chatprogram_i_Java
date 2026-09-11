@@ -1,9 +1,10 @@
 package org.example;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.Scanner;
 
 public class ChatClient {
     private static final String DEFAULT_HOST = "localhost";
@@ -11,15 +12,29 @@ public class ChatClient {
 
 
     public static void main(String[] args) {
+        MessageParser parser = new MessageParser();
+        
+        try (BufferedReader keyboard = new BufferedReader(new InputStreamReader(System.in));
+             Socket socket = new Socket(DEFAULT_HOST, DEFAULT_PORT);
+             PrintWriter out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
+             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+            
+            System.out.print("Indtast TYPE: ");
+            String type = keyboard.readLine();
+            System.out.print("Indtast TARGET: ");
+            String target = keyboard.readLine();
+            System.out.print("Indtast PAYLOAD: ");
+            String payload = keyboard.readLine();
 
-        Scanner scanner = new Scanner(System.in);
-        String message = scanner.nextLine();
+            Message clientMessage = new Message(null, type, null, target, payload);
+            String wireMessage = parser.formatClientMessage(clientMessage);
+            out.println(wireMessage);
 
-        try (Socket socket = new Socket(DEFAULT_HOST, DEFAULT_PORT);
-             PrintWriter out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true)) {
+            String serverWireMessage = in.readLine();
+            Message serverMessage = parser.parseServerMessage(serverWireMessage);
 
-            out.println(message);
-            System.out.println("Client connected and sent: " + message);
+            System.out.println("Client sent: " + wireMessage);
+            System.out.println("Client received: " + serverMessage);
         } catch (Exception e) {
             System.out.println("Client error: " + e.getMessage());
         }
