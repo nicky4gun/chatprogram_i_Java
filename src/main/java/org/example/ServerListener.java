@@ -4,13 +4,16 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
+import java.util.concurrent.BlockingQueue;
 
 public class ServerListener implements Runnable {
     private final Socket socket;
+    private final BlockingQueue<String> incomingMessages;
     private Thread listenerThread;
 
-    public ServerListener(Socket socket) {
+    public ServerListener(Socket socket, BlockingQueue<String> incomingMessages) {
         this.socket = socket;
+        this.incomingMessages = incomingMessages;
     }
 
     public void start() {
@@ -24,23 +27,19 @@ public class ServerListener implements Runnable {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
             String incomingText;
             while ((incomingText = in.readLine()) != null) {
-                System.out.println(incomingText);
+                incomingMessages.put(incomingText);
             }
-            // normal EOF (peer closed output)
-            System.out.println("ServerListener: connection closed by remote");
-        } catch (IOException e) {
-            // If socket was closed locally as part of graceful shutdown, avoid noisy error log
+        } catch (IOException | InterruptedException e) {
+            Thread.currentThread().interrupt();
             String msg = e.getMessage() == null ? "" : e.getMessage();
             boolean socketClosed = socket.isClosed() || msg.contains("Socket closed") || msg.contains("Connection reset");
-            if (socketClosed) {
-                System.out.println("ServerListener: socket closed");
-            } else {
-                sendErrorToServer("ServerListener error: " + e.getMessage());
+            if (!socketClosed) {
+                try {
+                    incomingMessages.put("ERROR|SERVER|" + msg);
+                } catch (InterruptedException interruptedException) {
+                    Thread.currentThread().interrupt();
+                }
             }
         }
-    }
-
-    private void sendErrorToServer(String errorMessage) {
-        System.out.println(errorMessage);
     }
 }
