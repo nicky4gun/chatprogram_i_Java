@@ -12,8 +12,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class ChatClientHandler implements Runnable {
-    private static final ConcurrentMap<String, ChatClientHandler> connectedClients = new ConcurrentHashMap<>();
-
     private final Socket clientSocket;
     private final ChatRoomManager chatRoomManager;
     private final PrintWriter out;
@@ -39,6 +37,7 @@ public class ChatClientHandler implements Runnable {
         } catch (IOException e) {
             System.out.println("Client handler error: " + e.getMessage());
         } finally {
+            disconnect();
             ClientRegistry.unregister(this);
             try {
                 clientSocket.close();
@@ -67,20 +66,28 @@ public class ChatClientHandler implements Runnable {
             case "TEXT":
                 sendTextToRoom(clientMessage.getTarget(), clientMessage.getPayload());
                 break;
+            case "PRIVATE":
+                sendPrivateMessage(clientMessage.getTarget(), clientMessage.getPayload());
+                break;
             default:
                 sendError("Ukendt kommando: " + clientMessage.getType(), clientMessage.getTarget());
                 break;
         }
     }
 
-    private void login(String requestedUsername) {
+    void login(String requestedUsername) {
         if (requestedUsername == null || requestedUsername.isBlank()) {
             sendError("Brugernavn mangler", "");
             return;
         }
 
-        this.username = requestedUsername.trim();
-        connectedClients.put(this.username, this);
+        String normalizedUsername = requestedUsername.trim();
+        if (!ClientRegistry.registerUsername(this, normalizedUsername)) {
+            sendError("Brugernavnet er allerede i brug", "");
+            return;
+        }
+
+        this.username = normalizedUsername;
         sendMessageToClient(new Message(Instant.now(), "OK", "Server", this.username, "Login godkendt"));
     }
 
@@ -148,8 +155,30 @@ public class ChatClientHandler implements Runnable {
         broadcastToRoom(normalizedRoomName, roomMessage);
     }
 
+    void sendPrivateMessage(String recipientUsername, String payload) {
+        if (requireLogin()) {
+            return;
+        }
+
+        if (recipientUsername == null || recipientUsername.isBlank()) {
+            sendError("Modtager mangler", "");
+            return;
+        }
+
+        String normalizedRecipient = recipientUsername.trim();
+        ChatClientHandler recipient = ClientRegistry.getClient(normalizedRecipient);
+        if (recipient == null) {
+            sendError("Brugeren findes ikke", normalizedRecipient);
+            return;
+        }
+
+        Message privateMessage = new Message(Instant.now(), "PRIVATE", username, normalizedRecipient, payload);
+        recipient.sendMessageToClient(privateMessage);
+        sendMessageToClient(new Message(Instant.now(), "OK", "Server", normalizedRecipient, "Besked sendt"));
+    }
+
     private void broadcastToRoom(String roomName, Message roomMessage) {
-        for (ChatClientHandler client : connectedClients.values()) {
+        for (ChatClientHandler client : ClientRegistry.getAllClients()) {
             if (client != null && client.isInRoom(roomName)) {
                 client.sendMessageToClient(roomMessage);
             }
@@ -183,7 +212,7 @@ public class ChatClientHandler implements Runnable {
     private void disconnect() {
         if (username != null) {
             chatRoomManager.removeUserFromAllRooms(username);
-            connectedClients.remove(username, this);
+            ClientRegistry.unregister(this);
         }
     }
 

@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
+import java.time.Instant;
 import java.util.concurrent.BlockingQueue;
 
 public class ServerListener implements Runnable {
@@ -35,7 +36,7 @@ public class ServerListener implements Runnable {
             boolean socketClosed = socket.isClosed() || msg.contains("Socket closed") || msg.contains("Connection reset");
             if (!socketClosed) {
                 try {
-                    incomingMessages.put("ERROR|SERVER|" + msg);
+                    incomingMessages.put(Instant.now() + "|ERROR|Server|SERVER|" + msg);
                 } catch (InterruptedException interruptedException) {
                     Thread.currentThread().interrupt();
                 }

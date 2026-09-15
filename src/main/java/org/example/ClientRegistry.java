@@ -1,7 +1,9 @@
 package org.example;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
-import java.util.Objects;
+
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ClientRegistry {
@@ -49,6 +51,19 @@ public class ClientRegistry {
         String normalizedUsername = normalizeUsername(username);
         synchronized (ACTIVE_USERS) {
             return normalizedUsername != null && ACTIVE_USERS.containsKey(normalizedUsername);
+        }
+    }
+
+    public static ChatClientHandler getClient(String username) {
+        String normalizedUsername = normalizeUsername(username);
+        synchronized (ACTIVE_USERS) {
+            return normalizedUsername == null ? null : ACTIVE_USERS.get(normalizedUsername);
+        }
+    }
+
+    public static Collection<ChatClientHandler> getAllClients() {
+        synchronized (ACTIVE_USERS) {
+            return new ArrayList<>(ACTIVE_USERS.values());
         }
     }
 
