@@ -1,4 +1,4 @@
-package org.example;
+package org.example.server;
 
 import java.util.Collections;
 import java.util.HashMap;

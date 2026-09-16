@@ -1,4 +1,4 @@
-package org.example;
+package org.example.protocol;
 
 import java.time.Instant;
 

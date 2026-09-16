@@ -1,7 +1,6 @@
-package org.example;
+package org.example.protocol;
 
 import java.time.Instant;
-import java.util.Objects;
 
 public class Message {
     private final Instant timestamp;
@@ -36,14 +35,5 @@ public class Message {
 
     public String getPayload() {
         return payload;
-    }
-
-    @Override
-    public String toString() {
-        return timestamp + "|"
-                + type + "|"
-                + sender + "|"
-                + target + "|"
-                + payload;
     }
 }

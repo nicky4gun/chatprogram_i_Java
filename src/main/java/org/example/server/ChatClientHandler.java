@@ -1,4 +1,7 @@
-package org.example;
+package org.example.server;
+
+import org.example.protocol.Message;
+import org.example.protocol.MessageParser;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -9,7 +12,6 @@ import java.net.Socket;
 import java.time.Instant;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 public class ChatClientHandler implements Runnable {
     private final Socket clientSocket;
@@ -32,6 +34,7 @@ public class ChatClientHandler implements Runnable {
             String rawClientMessage;
             while ((rawClientMessage = in.readLine()) != null) {
                 Message clientMessage = messageParser.parseClientMessage(rawClientMessage);
+
                 handleClientMessage(clientMessage);
             }
         } catch (IOException e) {
@@ -54,24 +57,12 @@ public class ChatClientHandler implements Runnable {
         }
 
         switch (clientMessage.getType().toUpperCase()) {
-            case "LOGIN":
-                login(clientMessage.getPayload());
-                break;
-            case "JOIN_ROOM":
-                joinRoom(clientMessage.getTarget());
-                break;
-            case "LEAVE_ROOM":
-                leaveRoom(clientMessage.getTarget());
-                break;
-            case "TEXT":
-                sendTextToRoom(clientMessage.getTarget(), clientMessage.getPayload());
-                break;
-            case "PRIVATE":
-                sendPrivateMessage(clientMessage.getTarget(), clientMessage.getPayload());
-                break;
-            default:
-                sendError("Ukendt kommando: " + clientMessage.getType(), clientMessage.getTarget());
-                break;
+            case "LOGIN" -> login(clientMessage.getPayload());
+            case "JOIN_ROOM" -> joinRoom(clientMessage.getTarget());
+            case "LEAVE_ROOM" -> leaveRoom(clientMessage.getTarget());
+            case "TEXT" -> sendTextToRoom(clientMessage.getTarget(), clientMessage.getPayload());
+            case "PRIVATE" -> sendPrivateMessage(clientMessage.getTarget(), clientMessage.getPayload());
+            default -> sendError("Ukendt kommando: " + clientMessage.getType(), clientMessage.getTarget());
         }
     }
 
@@ -222,23 +213,5 @@ public class ChatClientHandler implements Runnable {
 
     public String getUsername() {
         return username;
-    }
-
-    public void close() {
-        try {
-            clientSocket.close();
-        } catch (IOException e) {
-            System.out.println("Client socket close error: " + e.getMessage());
-        }
-    }
-
-    private Message createErrorMessage(String target, String message) {
-        return new Message(
-                Instant.now(),
-                "ERROR",
-                "Server",
-                target,
-                message
-        );
     }
 }
