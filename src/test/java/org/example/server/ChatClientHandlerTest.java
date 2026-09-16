@@ -18,16 +18,12 @@ class ChatClientHandlerTest {
 
     @BeforeEach
     void setUp() {
-        for (ChatClientHandler client : ClientRegistry.getAllClients()) {
-            ClientRegistry.unregister(client);
-        }
+        ClientRegistry.clear();
     }
 
     @AfterEach
     void tearDown() {
-        for (ChatClientHandler client : ClientRegistry.getAllClients()) {
-            ClientRegistry.unregister(client);
-        }
+        ClientRegistry.clear();
     }
 
     @Test

@@ -59,6 +59,12 @@ public class ClientRegistry {
         }
     }
 
+    public static void clear() {
+        synchronized (ACTIVE_USERS) {
+            ACTIVE_USERS.clear();
+        }
+    }
+
     private static String normalizeUsername(String username) {
         if (username == null) {
             return null;
