@@ -34,7 +34,6 @@ public class ChatClientHandler implements Runnable {
             String rawClientMessage;
             while ((rawClientMessage = in.readLine()) != null) {
                 if (rawClientMessage.isBlank()) {
-                    // ignore empty input lines from clients
                     continue;
                 }
 
@@ -49,7 +48,6 @@ public class ChatClientHandler implements Runnable {
                 try {
                     handleClientMessage(clientMessage);
                 } catch (Exception e) {
-                    // Protect server from unexpected handler exceptions
                     sendError("Fejl ved behandling af besked: " + (e.getMessage() == null ? "" : e.getMessage()), "");
                 }
             }
@@ -58,10 +56,6 @@ public class ChatClientHandler implements Runnable {
         } finally {
             disconnect();
             ClientRegistry.unregister(this);
-            try {
-                out.close();
-            } catch (Exception ignored) {
-            }
             try {
                 clientSocket.close();
             } catch (IOException e) {

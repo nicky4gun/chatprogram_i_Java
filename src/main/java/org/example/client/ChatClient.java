@@ -25,10 +25,13 @@ public class ChatClient {
              Socket socket = new Socket(DEFAULT_HOST, DEFAULT_PORT);
              PrintWriter writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true)) {
 
-            System.out.println("Connected to chat server at " + DEFAULT_HOST + ":" + DEFAULT_PORT);
+            System.out.println("Connected to server at " + DEFAULT_HOST + ":" + DEFAULT_PORT);
+
             ServerListener serverListener = new ServerListener(socket, incomingMessages);
             serverListener.start();
-             messagePrinter.start();
+            messagePrinter.start();
+
+            printChatMenu();
 
             while (true) {
                 System.out.print(System.lineSeparator() + "Indtast kommando (eller EXIT for at lukke): ");
@@ -84,7 +87,27 @@ public class ChatClient {
             return;
         }
 
-        System.out.println("\nServer: " + serverMessage.getType() + "|" + serverMessage.getSender() + "|" + serverMessage.getTarget()
+        if ("ERROR".equalsIgnoreCase(serverMessage.getType())) {
+            System.out.println("\n[ERROR] " + serverMessage.getPayload());
+            return;
+        }
+
+        System.out.println("\nServer: " + serverMessage.getTimestamp()
+                + "|" + serverMessage.getType()
+                + "|" + serverMessage.getSender()
+                + "|" + serverMessage.getTarget()
                 + "|" + serverMessage.getPayload());
+    }
+
+    private static void printChatMenu() {
+        System.out.println("""
+                Available commands:
+                1. Login: LOGIN||<username>
+                2. Join room: JOIN_ROOM|<room_name>|
+                3. Leave room: LEAVE_ROOM|<room_name>|
+                4. Send text: TEXT|<room_name>|<message>
+                5. Private message: PRIVATE|<recipient>|<message>
+                6. Exit: EXIT
+                """);
     }
 }
