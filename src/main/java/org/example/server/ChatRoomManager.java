@@ -1,12 +1,18 @@
 package org.example.server;
 
+import org.example.protocol.Message;
+
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 public class ChatRoomManager {
     private final Map<String, Set<String>> rooms = new HashMap<>();
+    private final Map<String, List<Message>> roomHistory = new HashMap<>();
 
     public boolean joinRoom(String roomName, String username) {
         String normalizedRoomName = normalizeRoomName(roomName);
@@ -47,6 +53,28 @@ public class ChatRoomManager {
 
         Set<String> members = rooms.get(normalizedRoomName);
         return members != null && members.contains(normalizedUsername);
+    }
+
+    public boolean addRoomMessage(String roomName, Message roomMessage) {
+        String normalizedRoomName = normalizeRoomName(roomName);
+        if (normalizedRoomName.isEmpty() || roomMessage == null || roomMessage.getType() == null) {
+            return false;
+        }
+
+        if (!"TEXT".equalsIgnoreCase(roomMessage.getType())) {
+            return false;
+        }
+
+        roomHistory.computeIfAbsent(normalizedRoomName, key -> new ArrayList<>()).add(roomMessage);
+        return true;
+    }
+
+    public List<Message> getRoomHistory(String roomName) {
+        String normalizedRoomName = normalizeRoomName(roomName);
+        if (normalizedRoomName.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return roomHistory.getOrDefault(normalizedRoomName, Collections.emptyList());
     }
 
     public boolean removeUserFromAllRooms(String username) {

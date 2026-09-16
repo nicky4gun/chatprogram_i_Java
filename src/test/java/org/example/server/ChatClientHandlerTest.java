@@ -58,8 +58,12 @@ class ChatClientHandlerTest {
         invokePrivateVoid(bobHandler, "joinRoom", "general");
 
         aliceConnection.clientReader.readLine();
-        bobConnection.clientReader.readLine();
         aliceConnection.clientReader.readLine();
+        aliceConnection.clientReader.readLine();
+        aliceConnection.clientReader.readLine();
+        bobConnection.clientReader.readLine();
+        bobConnection.clientReader.readLine();
+        bobConnection.clientReader.readLine();
         bobConnection.clientReader.readLine();
 
         invokePrivateVoid(aliceHandler, "sendTextToRoom", "general", "hello");
@@ -102,6 +106,12 @@ class ChatClientHandlerTest {
         assertTrue(aliceConnection.clientReader.readLine().contains("Du deltager nu i rummet general"));
         assertTrue(bobConnection.clientReader.readLine().contains("Du deltager nu i rummet general"));
         assertTrue(charlieConnection.clientReader.readLine().contains("Du deltager nu i rummet general"));
+        assertTrue(aliceConnection.clientReader.readLine().contains("Historik for rummet general"));
+        assertTrue(bobConnection.clientReader.readLine().contains("Historik for rummet general"));
+        assertTrue(charlieConnection.clientReader.readLine().contains("Historik for rummet general"));
+        assertTrue(aliceConnection.clientReader.readLine().contains("Der er ingen historik i rummet endnu"));
+        assertTrue(bobConnection.clientReader.readLine().contains("Der er ingen historik i rummet endnu"));
+        assertTrue(charlieConnection.clientReader.readLine().contains("Der er ingen historik i rummet endnu"));
 
         invokePrivateVoid(aliceHandler, "sendTextToRoom", "general", "hello everyone");
 
@@ -116,6 +126,37 @@ class ChatClientHandlerTest {
         aliceConnection.close();
         bobConnection.close();
         charlieConnection.close();
+    }
+
+    @Test
+    void joinAndHistoryRequestShowStoredMessagesInOrder() throws Exception {
+        TestConnection connection = createConnection();
+        ChatClientHandler handler = new ChatClientHandler(connection.acceptedSocket, new ChatRoomManager());
+
+        handler.login("alice");
+        connection.clientReader.readLine();
+
+        invokePrivateVoid(handler, "joinRoom", "general");
+        connection.clientReader.readLine();
+        connection.clientReader.readLine();
+        connection.clientReader.readLine();
+
+        invokePrivateVoid(handler, "sendTextToRoom", "general", "hello");
+        assertTrue(connection.clientReader.readLine().contains("hello"));
+        invokePrivateVoid(handler, "sendTextToRoom", "general", "again");
+        assertTrue(connection.clientReader.readLine().contains("again"));
+
+        invokePrivateVoid(handler, "showHistory", "general");
+
+        String historyHeader = connection.clientReader.readLine();
+        String firstMessage = connection.clientReader.readLine();
+        String secondMessage = connection.clientReader.readLine();
+
+        assertTrue(historyHeader.contains("Historik for rummet general"));
+        assertTrue(firstMessage.contains("hello"));
+        assertTrue(secondMessage.contains("again"));
+
+        connection.close();
     }
 
     @Test

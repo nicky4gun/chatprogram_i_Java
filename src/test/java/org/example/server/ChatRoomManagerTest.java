@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Instant;
+import org.example.protocol.Message;
 import org.junit.jupiter.api.Test;
 
 class ChatRoomManagerTest {
@@ -24,6 +26,16 @@ class ChatRoomManagerTest {
         assertFalse(chatRoomManager.joinRoom("general", "   "));
         assertFalse(chatRoomManager.leaveRoom("general", "   "));
         assertFalse(chatRoomManager.isUserInRoom("general", "   "));
+    }
+
+    @Test
+    void roomHistoryIsStoredInOrder() {
+        chatRoomManager.addRoomMessage("general", new Message(Instant.parse("2024-01-01T12:00:00Z"), "TEXT", "alice", "general", "first"));
+        chatRoomManager.addRoomMessage("general", new Message(Instant.parse("2024-01-01T12:00:01Z"), "TEXT", "bob", "general", "second"));
+
+        assertEquals(2, chatRoomManager.getRoomHistory("general").size());
+        assertEquals("first", chatRoomManager.getRoomHistory("general").get(0).getPayload());
+        assertEquals("second", chatRoomManager.getRoomHistory("general").get(1).getPayload());
     }
 
     @Test

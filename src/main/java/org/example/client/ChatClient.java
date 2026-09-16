@@ -87,6 +87,15 @@ public class ChatClient {
             return;
         }
 
+        if ("OK".equalsIgnoreCase(serverMessage.getType())) {
+            if (serverMessage.getPayload() != null && serverMessage.getPayload().startsWith("Historik for rummet ")) {
+                System.out.println("\n[HISTORY " + serverMessage.getTarget() + "] " + serverMessage.getPayload());
+                return;
+            }
+            System.out.println("\n[OK] " + serverMessage.getPayload());
+            return;
+        }
+
         if ("ERROR".equalsIgnoreCase(serverMessage.getType())) {
             System.out.println("\n[ERROR] " + serverMessage.getPayload());
             return;
@@ -106,8 +115,9 @@ public class ChatClient {
                 2. Join room: JOIN_ROOM|<room_name>|
                 3. Leave room: LEAVE_ROOM|<room_name>|
                 4. Send text: TEXT|<room_name>|<message>
-                5. Private message: PRIVATE|<recipient>|<message>
-                6. Exit: EXIT
+                5. History: HISTORY|<room_name>| or HISTORY|| (current room if unique)
+                6. Private message: PRIVATE|<recipient>|<message>
+                7. Exit: EXIT
                 """);
     }
 }

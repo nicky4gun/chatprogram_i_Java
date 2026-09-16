@@ -10,6 +10,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -76,6 +77,7 @@ public class ChatClientHandler implements Runnable {
             case "LEAVE_ROOM" -> leaveRoom(clientMessage.getTarget());
             case "TEXT" -> sendTextToRoom(clientMessage.getTarget(), clientMessage.getPayload());
             case "PRIVATE" -> sendPrivateMessage(clientMessage.getTarget(), clientMessage.getPayload());
+            case "HISTORY" -> showHistory(clientMessage.getTarget());
             default -> sendError("Ukendt kommando: " + clientMessage.getType(), clientMessage.getTarget());
         }
     }
@@ -110,6 +112,7 @@ public class ChatClientHandler implements Runnable {
             joinedRooms.add(normalizedRoomName);
             sendMessageToClient(new Message(Instant.now(), "OK", "Server", normalizedRoomName,
                     "Du deltager nu i rummet " + normalizedRoomName));
+            showHistory(normalizedRoomName);
             return;
         }
 
@@ -157,7 +160,57 @@ public class ChatClientHandler implements Runnable {
         }
 
         Message roomMessage = new Message(Instant.now(), "TEXT", username, normalizedRoomName, payload);
+        chatRoomManager.addRoomMessage(normalizedRoomName, roomMessage);
         broadcastToRoom(normalizedRoomName, roomMessage);
+    }
+
+    private void showHistory(String roomName) {
+        if (requireLogin()) {
+            return;
+        }
+
+        String resolvedRoomName = resolveHistoryRoomName(roomName);
+        if (resolvedRoomName == null) {
+            return;
+        }
+
+        if (!chatRoomManager.isUserInRoom(resolvedRoomName, username)) {
+            sendError("Du er ikke medlem af rummet", resolvedRoomName);
+            return;
+        }
+
+        List<Message> history = chatRoomManager.getRoomHistory(resolvedRoomName);
+        sendMessageToClient(new Message(Instant.now(), "OK", "Server", resolvedRoomName,
+                "Historik for rummet " + resolvedRoomName + ":"));
+
+        if (history.isEmpty()) {
+            sendMessageToClient(new Message(Instant.now(), "OK", "Server", resolvedRoomName,
+                    "Der er ingen historik i rummet endnu"));
+            return;
+        }
+
+        for (Message historicalMessage : history) {
+            sendMessageToClient(new Message(Instant.now(), "TEXT", historicalMessage.getSender(),
+                    historicalMessage.getTarget(), historicalMessage.getPayload()));
+        }
+    }
+
+    private String resolveHistoryRoomName(String roomName) {
+        if (roomName != null && !roomName.isBlank()) {
+            return roomName.trim();
+        }
+
+        if (joinedRooms.isEmpty()) {
+            sendError("Du er ikke medlem af noget rum", "");
+            return null;
+        }
+
+        if (joinedRooms.size() == 1) {
+            return joinedRooms.iterator().next();
+        }
+
+        sendError("Angiv et rum-navn, du deltager i flere rum", "");
+        return null;
     }
 
     void sendPrivateMessage(String recipientUsername, String payload) {
