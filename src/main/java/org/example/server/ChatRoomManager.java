@@ -1,6 +1,5 @@
 package org.example.server;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -8,16 +7,6 @@ import java.util.Set;
 
 public class ChatRoomManager {
     private final Map<String, Set<String>> rooms = new HashMap<>();
-
-    public boolean createRoom(String roomName) {
-        String normalizedRoomName = normalizeRoomName(roomName);
-        if (normalizedRoomName.isEmpty()) {
-            return false;
-        }
-
-        rooms.putIfAbsent(normalizedRoomName, new HashSet<>());
-        return true;
-    }
 
     public boolean joinRoom(String roomName, String username) {
         String normalizedRoomName = normalizeRoomName(roomName);
@@ -47,18 +36,6 @@ public class ChatRoomManager {
             rooms.remove(normalizedRoomName);
         }
         return removed;
-    }
-
-    public boolean roomExists(String roomName) {
-        return rooms.containsKey(normalizeRoomName(roomName));
-    }
-
-    public Set<String> getUsersInRoom(String roomName) {
-        Set<String> members = rooms.get(normalizeRoomName(roomName));
-        if (members == null) {
-            return Collections.emptySet();
-        }
-        return new HashSet<>(members);
     }
 
     public boolean isUserInRoom(String roomName, String username) {

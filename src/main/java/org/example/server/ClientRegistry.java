@@ -9,8 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ClientRegistry {
     private static final Map<String, ChatClientHandler> ACTIVE_USERS = new ConcurrentHashMap<>();
 
-    private ClientRegistry() {
-    }
+    private ClientRegistry() {}
 
     public static boolean registerUsername(ChatClientHandler clientHandler, String username) {
         String normalizedUsername = normalizeUsername(username);
@@ -47,13 +46,6 @@ public class ClientRegistry {
         }
     }
 
-    public static boolean isUsernameTaken(String username) {
-        String normalizedUsername = normalizeUsername(username);
-        synchronized (ACTIVE_USERS) {
-            return normalizedUsername != null && ACTIVE_USERS.containsKey(normalizedUsername);
-        }
-    }
-
     public static ChatClientHandler getClient(String username) {
         String normalizedUsername = normalizeUsername(username);
         synchronized (ACTIVE_USERS) {
@@ -64,12 +56,6 @@ public class ClientRegistry {
     public static Collection<ChatClientHandler> getAllClients() {
         synchronized (ACTIVE_USERS) {
             return new ArrayList<>(ACTIVE_USERS.values());
-        }
-    }
-
-    public static void clear() {
-        synchronized (ACTIVE_USERS) {
-            ACTIVE_USERS.clear();
         }
     }
 
