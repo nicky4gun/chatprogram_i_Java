@@ -84,6 +84,66 @@ class ChatClientHandlerTest {
     }
 
     @Test
+    void threeClientsCanJoinSameRoomAndBroadcast() throws Exception {
+        TestConnection aliceConnection = createConnection();
+        TestConnection bobConnection = createConnection();
+        TestConnection charlieConnection = createConnection();
+
+        ChatClientHandler aliceHandler = new ChatClientHandler(aliceConnection.acceptedSocket, new ChatRoomManager());
+        ChatClientHandler bobHandler = new ChatClientHandler(bobConnection.acceptedSocket, new ChatRoomManager());
+        ChatClientHandler charlieHandler = new ChatClientHandler(charlieConnection.acceptedSocket, new ChatRoomManager());
+
+        aliceHandler.login("alice");
+        bobHandler.login("bob");
+        charlieHandler.login("charlie");
+        invokePrivateVoid(aliceHandler, "joinRoom", "general");
+        invokePrivateVoid(bobHandler, "joinRoom", "general");
+        invokePrivateVoid(charlieHandler, "joinRoom", "general");
+
+        assertTrue(aliceConnection.clientReader.readLine().contains("Login godkendt"));
+        assertTrue(bobConnection.clientReader.readLine().contains("Login godkendt"));
+        assertTrue(charlieConnection.clientReader.readLine().contains("Login godkendt"));
+        assertTrue(aliceConnection.clientReader.readLine().contains("Du deltager nu i rummet general"));
+        assertTrue(bobConnection.clientReader.readLine().contains("Du deltager nu i rummet general"));
+        assertTrue(charlieConnection.clientReader.readLine().contains("Du deltager nu i rummet general"));
+
+        invokePrivateVoid(aliceHandler, "sendTextToRoom", "general", "hello everyone");
+
+        String aliceBroadcast = aliceConnection.clientReader.readLine();
+        String bobBroadcast = bobConnection.clientReader.readLine();
+        String charlieBroadcast = charlieConnection.clientReader.readLine();
+
+        assertTrue(aliceBroadcast.contains("hello everyone"));
+        assertTrue(bobBroadcast.contains("hello everyone"));
+        assertTrue(charlieBroadcast.contains("hello everyone"));
+
+        aliceConnection.close();
+        bobConnection.close();
+        charlieConnection.close();
+    }
+
+    @Test
+    void duplicateUsernameIsRejected() throws Exception {
+        TestConnection firstConnection = createConnection();
+        TestConnection secondConnection = createConnection();
+
+        ChatClientHandler first = new ChatClientHandler(firstConnection.acceptedSocket, new ChatRoomManager());
+        ChatClientHandler second = new ChatClientHandler(secondConnection.acceptedSocket, new ChatRoomManager());
+
+        first.login("alice");
+        second.login("alice");
+
+        firstConnection.clientReader.readLine();
+        secondConnection.clientReader.readLine();
+
+        assertEquals(first, ClientRegistry.getClient("alice"));
+        assertTrue(second.getUsername() == null || second.getUsername().isBlank());
+
+        firstConnection.close();
+        secondConnection.close();
+    }
+
+    @Test
     void malformedMessageAndUnexpectedDisconnectDoNotCrashTheServer() throws Exception {
         TestConnection connection = createConnection();
         ChatClientHandler handler = new ChatClientHandler(connection.acceptedSocket, new ChatRoomManager());
