@@ -13,25 +13,54 @@ public class ChatServer {
 
     public static void main(String[] args) {
         ChatRoomManager chatRoomManager = new ChatRoomManager();
+        ExecutorService executorService = Executors.newFixedThreadPool(MAX_USERS_ALLOWED);
 
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
-            ExecutorService executorService = Executors.newFixedThreadPool(MAX_USERS_ALLOWED);
-
             System.out.println("Chat server started on port " + PORT + "...");
 
-            while (true) {
-                Socket clientSocket = serverSocket.accept();
-                System.out.println("New client connected: " + clientSocket.getRemoteSocketAddress());
-
+            // Ensure executor is shutdown on JVM exit
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                System.out.println("Shutdown requested, stopping executor...");
+                executorService.shutdown();
                 try {
-                    ChatClientHandler clientHandler = new ChatClientHandler(clientSocket, chatRoomManager);
-                    executorService.execute(clientHandler);
+                    if (!executorService.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS)) {
+                        executorService.shutdownNow();
+                    }
+                } catch (InterruptedException e) {
+                    executorService.shutdownNow();
+                    Thread.currentThread().interrupt();
+                }
+            }));
+
+            while (!serverSocket.isClosed()) {
+                try {
+                    Socket clientSocket = serverSocket.accept();
+                    System.out.println("New client connected: " + clientSocket.getRemoteSocketAddress());
+
+                    try {
+                        ChatClientHandler clientHandler = new ChatClientHandler(clientSocket, chatRoomManager);
+                        executorService.execute(clientHandler);
+                    } catch (IOException e) {
+                        System.out.println("Failed to initialize handlers: " + e.getMessage());
+                        try { clientSocket.close(); } catch (IOException ignored) {}
+                    }
                 } catch (IOException e) {
-                    System.out.println("Failed to initialize handlers: " + e.getMessage());
+                    System.out.println("Accept failed: " + e.getMessage());
+                    break;
                 }
             }
         } catch (IOException e) {
             System.out.println("Server error: " + e.getMessage());
+        } finally {
+            executorService.shutdown();
+            try {
+                if (!executorService.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS)) {
+                    executorService.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                executorService.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
         }
     }
 }

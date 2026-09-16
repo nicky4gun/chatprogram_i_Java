@@ -33,15 +33,35 @@ public class ChatClientHandler implements Runnable {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
             String rawClientMessage;
             while ((rawClientMessage = in.readLine()) != null) {
-                Message clientMessage = messageParser.parseClientMessage(rawClientMessage);
+                if (rawClientMessage.isBlank()) {
+                    // ignore empty input lines from clients
+                    continue;
+                }
 
-                handleClientMessage(clientMessage);
+                Message clientMessage;
+                try {
+                    clientMessage = messageParser.parseClientMessage(rawClientMessage);
+                } catch (IllegalArgumentException e) {
+                    sendError("Fejl i beskedformat: " + e.getMessage(), "");
+                    continue;
+                }
+
+                try {
+                    handleClientMessage(clientMessage);
+                } catch (Exception e) {
+                    // Protect server from unexpected handler exceptions
+                    sendError("Fejl ved behandling af besked: " + (e.getMessage() == null ? "" : e.getMessage()), "");
+                }
             }
         } catch (IOException e) {
             System.out.println("Client handler error: " + e.getMessage());
         } finally {
             disconnect();
             ClientRegistry.unregister(this);
+            try {
+                out.close();
+            } catch (Exception ignored) {
+            }
             try {
                 clientSocket.close();
             } catch (IOException e) {
