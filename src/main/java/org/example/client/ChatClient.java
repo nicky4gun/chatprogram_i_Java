@@ -34,7 +34,7 @@ public class ChatClient {
             printChatMenu();
 
             while (true) {
-                System.out.print(System.lineSeparator() + "Indtast kommando (eller EXIT for at lukke): ");
+                System.out.print(System.lineSeparator() + "Indtast kommando: ");
                 String request = keyboard.readLine();
 
                 if (request == null) {
@@ -46,7 +46,6 @@ public class ChatClient {
                 }
 
                 writer.println(request);
-                System.out.println("Client: " + request);
             }
         } catch (Exception e) {
             System.out.println("Client error: " + e.getMessage());
@@ -87,12 +86,21 @@ public class ChatClient {
             return;
         }
 
+        if ("OK".equalsIgnoreCase(serverMessage.getType())) {
+            if (serverMessage.getPayload() != null && serverMessage.getPayload().startsWith("Historik for rummet ")) {
+                System.out.println("\n[HISTORY " + serverMessage.getTarget() + "] " + serverMessage.getPayload());
+                return;
+            }
+            System.out.println("\n[OK] " + serverMessage.getPayload());
+            return;
+        }
+
         if ("ERROR".equalsIgnoreCase(serverMessage.getType())) {
             System.out.println("\n[ERROR] " + serverMessage.getPayload());
             return;
         }
 
-        System.out.println("\nServer: " + serverMessage.getTimestamp()
+        System.out.println("\nServer: " + serverMessage.getFormattedTimestamp()
                 + "|" + serverMessage.getType()
                 + "|" + serverMessage.getSender()
                 + "|" + serverMessage.getTarget()
@@ -106,8 +114,9 @@ public class ChatClient {
                 2. Join room: JOIN_ROOM|<room_name>|
                 3. Leave room: LEAVE_ROOM|<room_name>|
                 4. Send text: TEXT|<room_name>|<message>
-                5. Private message: PRIVATE|<recipient>|<message>
-                6. Exit: EXIT
+                5. History: HISTORY|<room_name>| or HISTORY|| (current room if unique)
+                6. Private message: PRIVATE|<recipient>|<message>
+                7. Exit: EXIT
                 """);
     }
 }

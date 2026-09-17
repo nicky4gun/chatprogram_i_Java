@@ -36,7 +36,7 @@ public class ServerListener implements Runnable {
             boolean socketClosed = socket.isClosed() || msg.contains("Socket closed") || msg.contains("Connection reset");
             if (!socketClosed) {
                 try {
-                    incomingMessages.put(Instant.now() + "|ERROR|Server|Server|" + msg);
+                    incomingMessages.put(Instant.now().toString() + "|ERROR|Server|Server|" + msg);
                 } catch (InterruptedException interruptedException) {
                     Thread.currentThread().interrupt();
                 }

@@ -5,6 +5,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class ChatServer {
 
@@ -18,12 +19,11 @@ public class ChatServer {
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             System.out.println("Chat server started on port " + PORT + "...");
 
-            // Ensure executor is shutdown on JVM exit
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 System.out.println("Shutdown requested, stopping executor...");
                 executorService.shutdown();
                 try {
-                    if (!executorService.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS)) {
+                    if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
                         executorService.shutdownNow();
                     }
                 } catch (InterruptedException e) {

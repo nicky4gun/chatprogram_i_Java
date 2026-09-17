@@ -1,8 +1,14 @@
 package org.example.protocol;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 public class MessageParser {
+    private static final DateTimeFormatter DISPLAY_TIMESTAMP_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public Message parseClientMessage(String message) {
         String[] fields = message.split("\\|", 3);
@@ -23,7 +29,7 @@ public class MessageParser {
             throw new IllegalArgumentException("Server message must be in format TIMESTAMP|TYPE|SENDER|TARGET|PAYLOAD");
         }
 
-        Instant timestamp = Instant.parse(fields[0]);
+        Instant timestamp = parseTimestamp(fields[0]);
         String type = fields[1];
         String sender = fields[2];
         String target = fields[3];
@@ -49,10 +55,19 @@ public class MessageParser {
             throw new IllegalArgumentException("Server message requires timestamp, type, sender, target and payload");
         }
 
-        return message.getTimestamp() + "|"
+        return message.getFormattedTimestamp() + "|"
                 + message.getType() + "|"
                 + message.getSender() + "|"
                 + message.getTarget() + "|"
                 + message.getPayload();
+    }
+
+    private Instant parseTimestamp(String timestampText) {
+        try {
+            return Instant.parse(timestampText);
+        } catch (DateTimeParseException ignored) {
+            LocalDateTime localDateTime = LocalDateTime.parse(timestampText, DISPLAY_TIMESTAMP_FORMATTER);
+            return localDateTime.atZone(ZoneId.systemDefault()).toInstant();
+        }
     }
 }

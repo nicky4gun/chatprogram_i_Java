@@ -43,6 +43,15 @@ class MessageParserTest {
     }
 
     @Test
+    void historyCommandParsesWithEmptyPayload() {
+        Message message = parser.parseClientMessage("HISTORY|general|");
+
+        assertEquals("HISTORY", message.getType());
+        assertEquals("general", message.getTarget());
+        assertEquals("", message.getPayload());
+    }
+
+    @Test
     void malformedInputThrowsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> parser.parseClientMessage("BAD"));
         assertThrows(IllegalArgumentException.class, () -> parser.parseServerMessage("BAD"));

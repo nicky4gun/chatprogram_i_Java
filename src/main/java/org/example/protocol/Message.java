@@ -1,8 +1,13 @@
 package org.example.protocol;
 
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 public class Message {
+    private static final DateTimeFormatter DISPLAY_TIMESTAMP_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault());
+
     private final Instant timestamp;
     private final String type;
     private final String sender;
@@ -19,6 +24,13 @@ public class Message {
 
     public Instant getTimestamp() {
         return timestamp;
+    }
+
+    public String getFormattedTimestamp() {
+        if (timestamp == null) {
+            return "";
+        }
+        return DISPLAY_TIMESTAMP_FORMATTER.format(timestamp);
     }
 
     public String getType() {

@@ -10,6 +10,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -36,6 +37,8 @@ public class ChatClientHandler implements Runnable {
                 if (rawClientMessage.isBlank()) {
                     continue;
                 }
+
+                System.out.println("[Client] " + rawClientMessage);
 
                 Message clientMessage;
                 try {
@@ -76,11 +79,12 @@ public class ChatClientHandler implements Runnable {
             case "LEAVE_ROOM" -> leaveRoom(clientMessage.getTarget());
             case "TEXT" -> sendTextToRoom(clientMessage.getTarget(), clientMessage.getPayload());
             case "PRIVATE" -> sendPrivateMessage(clientMessage.getTarget(), clientMessage.getPayload());
+            case "HISTORY" -> showHistory(clientMessage.getTarget());
             default -> sendError("Ukendt kommando: " + clientMessage.getType(), clientMessage.getTarget());
         }
     }
 
-    void login(String requestedUsername) {
+    public void login(String requestedUsername) {
         if (requestedUsername == null || requestedUsername.isBlank()) {
             sendError("Brugernavn mangler", "");
             return;
@@ -110,6 +114,7 @@ public class ChatClientHandler implements Runnable {
             joinedRooms.add(normalizedRoomName);
             sendMessageToClient(new Message(Instant.now(), "OK", "Server", normalizedRoomName,
                     "Du deltager nu i rummet " + normalizedRoomName));
+            showHistory(normalizedRoomName);
             return;
         }
 
@@ -157,10 +162,60 @@ public class ChatClientHandler implements Runnable {
         }
 
         Message roomMessage = new Message(Instant.now(), "TEXT", username, normalizedRoomName, payload);
+        chatRoomManager.addRoomMessage(normalizedRoomName, roomMessage);
         broadcastToRoom(normalizedRoomName, roomMessage);
     }
 
-    void sendPrivateMessage(String recipientUsername, String payload) {
+    private void showHistory(String roomName) {
+        if (requireLogin()) {
+            return;
+        }
+
+        String resolvedRoomName = resolveHistoryRoomName(roomName);
+        if (resolvedRoomName == null) {
+            return;
+        }
+
+        if (!chatRoomManager.isUserInRoom(resolvedRoomName, username)) {
+            sendError("Du er ikke medlem af rummet", resolvedRoomName);
+            return;
+        }
+
+        List<Message> history = chatRoomManager.getRoomHistory(resolvedRoomName);
+        sendMessageToClient(new Message(Instant.now(), "OK", "Server", resolvedRoomName,
+                "Historik for rummet " + resolvedRoomName + ":"));
+
+        if (history.isEmpty()) {
+            sendMessageToClient(new Message(Instant.now(), "OK", "Server", resolvedRoomName,
+                    "Der er ingen historik i rummet endnu"));
+            return;
+        }
+
+        for (Message historicalMessage : history) {
+            sendMessageToClient(new Message(Instant.now(), "TEXT", historicalMessage.getSender(),
+                    historicalMessage.getTarget(), historicalMessage.getPayload()));
+        }
+    }
+
+    private String resolveHistoryRoomName(String roomName) {
+        if (roomName != null && !roomName.isBlank()) {
+            return roomName.trim();
+        }
+
+        if (joinedRooms.isEmpty()) {
+            sendError("Du er ikke medlem af noget rum", "");
+            return null;
+        }
+
+        if (joinedRooms.size() == 1) {
+            return joinedRooms.iterator().next();
+        }
+
+        sendError("Angiv et rum-navn, du deltager i flere rum", "");
+        return null;
+    }
+
+    public void sendPrivateMessage(String recipientUsername, String payload) {
         if (requireLogin()) {
             return;
         }
@@ -222,7 +277,9 @@ public class ChatClientHandler implements Runnable {
     }
 
     private void sendMessageToClient(Message message) {
-        out.println(messageParser.formatServerMessage(message));
+        String formattedMessage = messageParser.formatServerMessage(message);
+        System.out.println("[Server] " + formattedMessage);
+        out.println(formattedMessage);
     }
 
     public String getUsername() {
