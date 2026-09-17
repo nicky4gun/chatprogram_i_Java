@@ -34,7 +34,7 @@ public class ChatClient {
             printChatMenu();
 
             while (true) {
-                System.out.print(System.lineSeparator() + "Indtast kommando (eller EXIT for at lukke): ");
+                System.out.print(System.lineSeparator() + "Indtast kommando: ");
                 String request = keyboard.readLine();
 
                 if (request == null) {
@@ -46,7 +46,6 @@ public class ChatClient {
                 }
 
                 writer.println(request);
-                System.out.println("Client: " + request);
             }
         } catch (Exception e) {
             System.out.println("Client error: " + e.getMessage());
@@ -101,7 +100,7 @@ public class ChatClient {
             return;
         }
 
-        System.out.println("\nServer: " + serverMessage.getTimestamp()
+        System.out.println("\nServer: " + serverMessage.getFormattedTimestamp()
                 + "|" + serverMessage.getType()
                 + "|" + serverMessage.getSender()
                 + "|" + serverMessage.getTarget()

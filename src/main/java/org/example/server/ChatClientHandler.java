@@ -38,6 +38,8 @@ public class ChatClientHandler implements Runnable {
                     continue;
                 }
 
+                System.out.println("[Client] " + rawClientMessage);
+
                 Message clientMessage;
                 try {
                     clientMessage = messageParser.parseClientMessage(rawClientMessage);
@@ -82,7 +84,7 @@ public class ChatClientHandler implements Runnable {
         }
     }
 
-    void login(String requestedUsername) {
+    public void login(String requestedUsername) {
         if (requestedUsername == null || requestedUsername.isBlank()) {
             sendError("Brugernavn mangler", "");
             return;
@@ -213,7 +215,7 @@ public class ChatClientHandler implements Runnable {
         return null;
     }
 
-    void sendPrivateMessage(String recipientUsername, String payload) {
+    public void sendPrivateMessage(String recipientUsername, String payload) {
         if (requireLogin()) {
             return;
         }
@@ -275,7 +277,9 @@ public class ChatClientHandler implements Runnable {
     }
 
     private void sendMessageToClient(Message message) {
-        out.println(messageParser.formatServerMessage(message));
+        String formattedMessage = messageParser.formatServerMessage(message);
+        System.out.println("[Server] " + formattedMessage);
+        out.println(formattedMessage);
     }
 
     public String getUsername() {
