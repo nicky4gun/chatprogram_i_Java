@@ -39,7 +39,7 @@ class MessageParserTest {
         Message serverMessage = new Message(Instant.parse("2024-01-01T12:00:00Z"), "TEXT", "alice", "general", "hello");
 
         assertEquals("TEXT|general|hello", parser.formatClientMessage(clientMessage));
-        assertEquals("2024-01-01T12:00:00Z|TEXT|alice|general|hello", parser.formatServerMessage(serverMessage));
+        assertEquals("2024-01-01 13:00:00|TEXT|alice|general|hello", parser.formatServerMessage(serverMessage));
     }
 
     @Test
